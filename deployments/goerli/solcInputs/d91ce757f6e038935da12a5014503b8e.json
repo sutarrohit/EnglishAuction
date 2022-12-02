@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/EnglishAuction.sol": {
+      "content": "//SPDX-License-Identifier:MIT\r\npragma solidity ^0.8.17;\r\n\r\ninterface IERC721 {\r\n    function transferFrom(\r\n        address _from,\r\n        address _to,\r\n        uint256 _tokenId\r\n    ) external;\r\n}\r\n\r\ncontract EnglishAuction {\r\n    //Events\r\n    event Start();\r\n    event Bid(address Bider, uint256 amount);\r\n    event Withdraw(address Bider, uint256 amount);\r\n    event End(address highestBider, uint256 Bid);\r\n\r\n    //NFT Variables\r\n    IERC721 public immutable nftContract;\r\n    uint256 public immutable nftId;\r\n\r\n    //State variables\r\n    address payable public immutable seller;\r\n    uint32 public endAt;\r\n    bool public auctionStarted;\r\n    bool public auctionEnded;\r\n\r\n    address public highestBider;\r\n    uint256 public highestBid;\r\n\r\n    //Mappping\r\n    mapping(address => uint256) public bids;\r\n\r\n    constructor(\r\n        address _nftAddress,\r\n        uint256 _nftId,\r\n        uint256 _startingBid\r\n    ) {\r\n        nftContract = IERC721(_nftAddress);\r\n        nftId = _nftId;\r\n        seller = payable(msg.sender);\r\n        highestBid = _startingBid;\r\n    }\r\n\r\n    //startAuction function start Auction\r\n    function startAuction() public {\r\n        require(msg.sender == seller, \"Not Seller\");\r\n        require(!auctionStarted, \"Auction Already Started\");\r\n\r\n        auctionStarted = true;\r\n        endAt = uint32(block.timestamp + 160);\r\n        nftContract.transferFrom(seller, address(this), nftId);\r\n\r\n        emit Start();\r\n    }\r\n\r\n    //bid function start bidding\r\n    function bid() public payable {\r\n        require(auctionStarted, \"Auction not Startrd\");\r\n        require(!auctionEnded, \"Auction Ends\");\r\n        require(msg.value > highestBid);\r\n\r\n        highestBider = msg.sender;\r\n        highestBid = msg.value;\r\n        bids[msg.sender] += msg.value;\r\n\r\n        emit Bid(msg.sender, msg.value);\r\n    }\r\n\r\n    //Bidder withdraw their funds\r\n    function withdraw() external {\r\n        uint256 balance = bids[msg.sender];\r\n        require(balance > 0 && msg.sender != highestBider, \"You are not bider\");\r\n\r\n        bids[msg.sender] = 0;\r\n\r\n        (bool success, ) = msg.sender.call{value: balance}(\"\");\r\n        require(success, \"Transaction Failed\");\r\n\r\n        emit Withdraw(msg.sender, balance);\r\n    }\r\n\r\n    //End Auction\r\n    function end() external {\r\n        require(auctionStarted, \"Auction not Startrd\");\r\n        require(!auctionEnded, \"Auction Ends\");\r\n        require(block.timestamp >= endAt, \"not ended\");\r\n\r\n        auctionEnded = true;\r\n\r\n        if (highestBider != address(0)) {\r\n            nftContract.transferFrom(address(this), highestBider, nftId);\r\n            (bool success, ) = seller.call{value: highestBid}(\"\");\r\n            require(success, \"Transction Failed\");\r\n        } else {\r\n            nftContract.transferFrom(address(this), seller, nftId);\r\n        }\r\n\r\n        emit End(highestBider, highestBid);\r\n    }\r\n}\r\n"
+    }
+  },
+  "settings": {
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata",
+          "devdoc",
+          "userdoc",
+          "storageLayout",
+          "evm.gasEstimates"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    }
+  }
+}
