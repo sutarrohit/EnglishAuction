@@ -1,4 +1,4 @@
-#English Auction NFT Smart Contract
+# English Auction NFT Smart Contract
 
 This smart contract is an implementation of an English auction for non-fungible tokens (NFTs) on the Ethereum blockchain. In an English auction, the seller sets a starting price, and buyers bid successively higher prices until no higher bid is offered, at which point the highest bidder wins the NFT.
 
